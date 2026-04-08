@@ -343,7 +343,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   padding: 8mm 0;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   display: grid;
-  grid-template-columns: repeat(3, 70mm);
+  grid-template-columns: 10mm repeat(3, 70mm);
   grid-template-rows: repeat(11, 25.4mm);
   box-sizing: content-box;
 }
@@ -378,7 +378,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .print-label-page {
     width: 210mm;
     display: grid;
-    grid-template-columns: repeat(3, 70mm);
+    grid-template-columns: 10mm repeat(3, 70mm);
     grid-template-rows: repeat(11, 25.4mm);
     page-break-after: always;
   }
@@ -394,6 +394,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     box-sizing: border-box;
     font-family: Arial, sans-serif;
   }
+
+  .print-label:nth-child(-n+11) { grid-column: 2; }
+  .print-label:nth-child(n+12):nth-child(-n+22) { grid-column: 3; }
+  .print-label:nth-child(n+23) { grid-column: 4; }
 }
 
 /* Zone d'impression (cachée normalement) */
