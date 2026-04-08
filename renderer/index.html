@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <title>Étiquettes</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════ TOOLBAR ═══════════════════════════ -->
+<header class="toolbar">
+  <button id="btn-open" title="Ouvrir une base de données Access (Ctrl+O)">
+    📂 Ouvrir base de données
+  </button>
+
+  <span class="toolbar-sep"></span>
+
+  <label class="toolbar-label">Table :</label>
+  <select id="select-table" disabled>
+    <option value="">— Aucune base chargée —</option>
+  </select>
+
+  <span class="toolbar-sep"></span>
+
+  <input id="search-global" type="search" placeholder="Rechercher…" disabled />
+
+  <span class="toolbar-flex"></span>
+
+  <span id="status-bar" class="status-bar">Aucune base de données ouverte</span>
+</header>
+
+<!-- ═══════════════════════════ BODY ═════════════════════════════ -->
+<div class="app-body">
+
+  <!-- ── Panneau gauche : filtres + config étiquettes ── -->
+  <aside class="sidebar">
+    <section class="sidebar-section">
+      <h3>Sélection</h3>
+      <button id="btn-select-all" disabled>Tout sélectionner</button>
+      <button id="btn-select-filtered" disabled>Sélectionner filtrés</button>
+      <button id="btn-deselect-all" disabled>Tout désélectionner</button>
+    </section>
+
+    <section class="sidebar-section">
+      <h3>Filtres par colonne</h3>
+      <div id="column-filters">
+        <p class="placeholder-text">Chargez une base de données pour voir les filtres.</p>
+      </div>
+    </section>
+
+    <section class="sidebar-section">
+      <h3>Étiquettes — champs</h3>
+      <p class="hint">Cochez et ordonnez les champs à afficher sur chaque étiquette.</p>
+      <div id="label-fields-config">
+        <p class="placeholder-text">Chargez une base de données pour configurer.</p>
+      </div>
+    </section>
+
+    <section class="sidebar-section sidebar-actions">
+      <button id="btn-preview" class="btn-primary" disabled>👁 Aperçu étiquettes</button>
+      <button id="btn-print" class="btn-primary" disabled>🖨 Imprimer</button>
+    </section>
+  </aside>
+
+  <!-- ── Zone principale : table ── -->
+  <main class="main-content">
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>Ouvrez une base de données Access (.mdb / .accdb)<br>pour afficher les enregistrements.</p>
+      <button id="btn-open-empty">Ouvrir une base de données…</button>
+    </div>
+
+    <div id="table-container" class="table-container hidden">
+      <table id="records-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════ MODAL APERÇU ÉTIQUETTES ═══════════════════ -->
+<div id="modal-preview" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>Aperçu des étiquettes</span>
+      <button id="modal-close" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="label-preview-area"></div>
+    </div>
+    <div class="modal-footer">
+      <span id="preview-count"></span>
+      <button id="btn-print-from-modal" class="btn-primary">🖨 Imprimer</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
