@@ -282,32 +282,70 @@ function renderTable() {
 function buildColumnFilters() {
   columnFiltersDiv.innerHTML = '';
 
-  // Limiter à 8 colonnes pour éviter de surcharger la sidebar
-  const cols = state.columns.slice(0, 8);
+  if (state.columns.length === 0) {
+    columnFiltersDiv.innerHTML = '<p class="placeholder-text">Aucune colonne.</p>';
+    return;
+  }
 
-  cols.forEach((col) => {
+  // Bouton reset tous les filtres
+  const btnReset = document.createElement('button');
+  btnReset.textContent = '✕ Effacer les filtres';
+  btnReset.className = 'btn-reset-filters';
+  btnReset.addEventListener('click', resetAllFilters);
+  columnFiltersDiv.appendChild(btnReset);
+
+  state.columns.forEach((col) => {
+    // Récupérer les valeurs uniques non vides, triées
+    const uniqueValues = [...new Set(
+      state.allRecords.map((r) => r[col]).filter((v) => v !== '')
+    )].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+    // Ne créer le filtre que si la colonne a plusieurs valeurs distinctes
+    if (uniqueValues.length < 2) return;
+
     const div = document.createElement('div');
     div.className = 'filter-item';
 
     const label = document.createElement('label');
     label.textContent = col;
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Filtrer…';
-    input.addEventListener('input', () => {
-      state.columnFilters[col] = input.value.trim();
+    const select = document.createElement('select');
+    select.dataset.col = col;
+
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = '— Toutes —';
+    select.appendChild(optAll);
+
+    uniqueValues.forEach((val) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val.length > 30 ? val.slice(0, 30) + '…' : val;
+      opt.title = val;
+      select.appendChild(opt);
+    });
+
+    // Restaurer la valeur si un filtre était déjà actif
+    if (state.columnFilters[col]) select.value = state.columnFilters[col];
+
+    select.addEventListener('change', () => {
+      state.columnFilters[col] = select.value;
       applyFilters();
     });
 
     div.appendChild(label);
-    div.appendChild(input);
+    div.appendChild(select);
     columnFiltersDiv.appendChild(div);
   });
+}
 
-  if (cols.length === 0) {
-    columnFiltersDiv.innerHTML = '<p class="placeholder-text">Aucune colonne.</p>';
-  }
+function resetAllFilters() {
+  state.columnFilters = {};
+  state.globalSearch = '';
+  searchGlobal.value = '';
+  // Remettre tous les selects à "— Toutes —"
+  columnFiltersDiv.querySelectorAll('select').forEach((s) => { s.value = ''; });
+  applyFilters();
 }
 
 // ─── Configuration des champs d'étiquette ────────────────────────

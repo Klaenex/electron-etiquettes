@@ -136,15 +136,29 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.filter-item input {
+.filter-item input,
+.filter-item select {
   width: 100%;
   padding: 3px 6px;
   border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 12px;
   background: var(--bg);
+  cursor: pointer;
 }
-.filter-item input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.filter-item input:focus,
+.filter-item select:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+
+.btn-reset-filters {
+  width: 100%;
+  font-size: 11px;
+  padding: 3px 8px;
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+  margin-bottom: 4px;
+}
+.btn-reset-filters:hover:not(:disabled) { background: #fef2f2; border-color: var(--danger); }
 
 /* ── Label field config checkboxes ── */
 .label-field-item {
