@@ -4,7 +4,12 @@
  */
 
 const fs = require('fs');
-const MDBReader = require('mdb-reader');
+
+// mdb-reader v3+ est un module ESM — on utilise import() dynamique
+async function getMDBReader() {
+  const mod = await import('mdb-reader');
+  return mod.default ?? mod.MDBReader ?? mod;
+}
 
 /**
  * Charge une base de données Access et retourne la liste de ses tables.
@@ -12,6 +17,7 @@ const MDBReader = require('mdb-reader');
  * @returns {{ tables: string[] }}
  */
 async function loadDatabase(filePath) {
+  const MDBReader = await getMDBReader();
   const buffer = fs.readFileSync(filePath);
   const reader = new MDBReader(buffer);
   const tables = reader.getTableNames({ normalTables: true, systemTables: false });
@@ -25,6 +31,7 @@ async function loadDatabase(filePath) {
  * @returns {{ columns: string[], rows: object[] }}
  */
 async function getTableData(filePath, tableName) {
+  const MDBReader = await getMDBReader();
   const buffer = fs.readFileSync(filePath);
   const reader = new MDBReader(buffer);
   const table = reader.getTable(tableName);
