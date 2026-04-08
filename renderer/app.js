@@ -282,8 +282,16 @@ function renderTable() {
 function buildColumnFilters() {
   columnFiltersDiv.innerHTML = '';
 
-  if (state.columns.length === 0) {
-    columnFiltersDiv.innerHTML = '<p class="placeholder-text">Aucune colonne.</p>';
+  // Colonnes de filtrage autorisées (case-insensitive)
+  const filterableColumns = ['Catégorie', 'Ville', 'Code Postal', 'categorie', 'ville', 'code postal'];
+
+  // Trouver les colonnes qui correspondent (insensible à la casse)
+  const colsToFilter = state.columns.filter((col) =>
+    filterableColumns.some((fc) => col.toLowerCase() === fc.toLowerCase())
+  );
+
+  if (colsToFilter.length === 0) {
+    columnFiltersDiv.innerHTML = '<p class="placeholder-text">Aucun filtre disponible.</p>';
     return;
   }
 
@@ -294,14 +302,11 @@ function buildColumnFilters() {
   btnReset.addEventListener('click', resetAllFilters);
   columnFiltersDiv.appendChild(btnReset);
 
-  state.columns.forEach((col) => {
+  colsToFilter.forEach((col) => {
     // Récupérer les valeurs uniques non vides, triées
     const uniqueValues = [...new Set(
       state.allRecords.map((r) => r[col]).filter((v) => v !== '')
     )].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-
-    // Ne créer le filtre que si la colonne a plusieurs valeurs distinctes
-    if (uniqueValues.length < 2) return;
 
     const div = document.createElement('div');
     div.className = 'filter-item';
