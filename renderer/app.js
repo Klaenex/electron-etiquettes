@@ -431,12 +431,11 @@ function buildLabelHTML(records) {
         })
         .join('');
 
-      // Compléter la dernière page avec des étiquettes vides + marge gauche
+      // Compléter la dernière page avec des étiquettes vides
       const remaining = LABELS_PER_PAGE - page.length;
       const empties = Array(remaining).fill('<div class="print-label"></div>').join('');
-      const marginLeft = '<div style="grid-column:1;"></div>'; // Marge gauche 10mm
 
-      return `<div class="print-label-page">${marginLeft}${labels}${empties}</div>`;
+      return `<div class="print-label-page">${labels}${empties}</div>`;
     })
     .join('');
 }
@@ -465,9 +464,8 @@ function buildPreviewHTML(records) {
 
       const remaining = LABELS_PER_PAGE - page.length;
       const empties = Array(remaining).fill('<div class="label-preview"></div>').join('');
-      const marginLeft = '<div style="width:10mm;"></div>'; // Marge gauche 10mm
 
-      return `<div class="label-page-preview">${marginLeft}${labels}${empties}</div>`;
+      return `<div class="label-page-preview">${labels}${empties}</div>`;
     })
     .join('');
 }
