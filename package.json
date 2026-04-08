@@ -1,0 +1,42 @@
+{
+  "name": "electron-etiquettes",
+  "version": "1.0.0",
+  "description": "Application d'impression d'étiquettes d'adressage depuis une base Access",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "dependencies": {
+    "mdb-reader": "^3.2.0"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "overrides": {
+    "rimraf": "^5.0.0",
+    "glob": "^11.0.0",
+    "tar": "^7.0.0",
+    "inflight": "npm:lru-cache@^10.0.0"
+  },
+  "build": {
+    "appId": "com.etiquettes.app",
+    "productName": "Étiquettes",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "node_modules/**/*"
+    ]
+  }
+}
