@@ -6,8 +6,11 @@ import Sidebar from "./components/Sidebar";
 import Toolbar from "./components/Toolbar";
 import { buildPreviewHTML, buildPrintHTML, getPageCount, resolveLabelLayout } from "./lib/labels";
 
-const FILTERABLE_COLUMNS = ["categorie", "ville", "code postal"];
+const FILTERABLE_COLUMNS = ["categorie", "ville", "code postal", "bdl"];
 const MULTI_SELECT_FILTER_COLUMNS = ["categorie"];
+const COLUMN_VALUE_LABELS = {
+  bdl: { "-1": "Oui (reçoit le BDL)" },
+};
 
 function normalizeFilterName(value) {
   return value
@@ -67,12 +70,16 @@ export default function App() {
   const filterColumns = useMemo(() => {
     return columns
       .filter((column) => FILTERABLE_COLUMNS.includes(normalizeFilterName(column)))
-      .map((column) => ({
-        name: column,
-        isMultiSelect: MULTI_SELECT_FILTER_COLUMNS.includes(normalizeFilterName(column)),
-        values: [...new Set(allRecords.map((row) => normalizeFilterValue(row[column])).filter(Boolean))]
-          .sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" })),
-      }));
+      .map((column) => {
+        const normalizedName = normalizeFilterName(column);
+        return {
+          name: column,
+          isMultiSelect: MULTI_SELECT_FILTER_COLUMNS.includes(normalizedName),
+          valueLabels: COLUMN_VALUE_LABELS[normalizedName] ?? {},
+          values: [...new Set(allRecords.map((row) => normalizeFilterValue(row[column])).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" })),
+        };
+      });
   }, [allRecords, columns]);
 
   const labelLayout = useMemo(() => resolveLabelLayout(columns), [columns]);

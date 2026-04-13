@@ -33,22 +33,23 @@ function FiltersSection({
             <button className="btn-reset-filters" onClick={onResetFilters}>
               Effacer les filtres
             </button>
-            {columns.map(({ name, values, isMultiSelect }) => (
+            {columns.map(({ name, values, isMultiSelect, valueLabels = {} }) => (
               <div className="filter-item" key={name}>
                 <label>{name}</label>
                 {isMultiSelect ? (
                   <div className="filter-checklist">
                     {values.map((value) => {
                       const checked = Array.isArray(filters[name]) && filters[name].includes(value);
+                      const displayLabel = valueLabels[value] ?? value;
 
                       return (
-                        <label className="filter-checkbox-item" key={value} title={value}>
+                        <label className="filter-checkbox-item" key={value} title={displayLabel}>
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => onToggleMultiFilterValue(name, value)}
                           />
-                          <span>{value}</span>
+                          <span>{displayLabel}</span>
                         </label>
                       );
                     })}
@@ -60,11 +61,15 @@ function FiltersSection({
                     onChange={(event) => onChangeFilter(name, event.target.value)}
                   >
                     <option value="">Toutes</option>
-                    {values.map((value) => (
-                      <option key={value} value={value} title={value}>
-                        {value.length > 30 ? `${value.slice(0, 30)}...` : value}
-                      </option>
-                    ))}
+                    {values.map((value) => {
+                      const displayLabel = valueLabels[value] ?? value;
+                      const truncated = displayLabel.length > 30 ? `${displayLabel.slice(0, 30)}...` : displayLabel;
+                      return (
+                        <option key={value} value={value} title={displayLabel}>
+                          {truncated}
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
               </div>
