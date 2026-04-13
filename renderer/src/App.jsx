@@ -317,6 +317,23 @@ export default function App() {
     }
   }
 
+  async function exportSQLite() {
+    if (!filePath) return;
+
+    const result = await electronAPI.exportSQLite(filePath);
+
+    if (result.canceled) return;
+
+    if (!result.success) {
+      window.alert(`Erreur export SQLite : ${result.error || "inconnue"}`);
+      return;
+    }
+
+    setStatusMessage(
+      `SQLite exporte : ${result.tableCount} table(s), ${result.rowCount} enregistrement(s)`,
+    );
+  }
+
   async function exportExcel() {
     if (selectedRecords.length === 0) {
       window.alert(
@@ -355,6 +372,7 @@ export default function App() {
           disabled={controlsDisabled}
           status={statusText}
           isError={isError}
+          onExportSQLite={exportSQLite}
         />
 
         <div className="app-body">

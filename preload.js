@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   printLabels: (options) => ipcRenderer.invoke('print:labels', options),
   previewLabels: (htmlContent) => ipcRenderer.invoke('print:preview', htmlContent),
   exportExcel: (payload) => ipcRenderer.invoke('export:excel', payload),
+  exportSQLite: (filePath) => ipcRenderer.invoke('db:exportSQLite', filePath),
 
   // Événements depuis le menu principal
   onMenuOpenFile: (callback) => {

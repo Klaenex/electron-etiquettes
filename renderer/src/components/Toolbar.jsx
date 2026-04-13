@@ -8,12 +8,22 @@ export default function Toolbar({
   disabled,
   status,
   isError,
+  onExportSQLite,
 }) {
   return (
     <header className="toolbar">
       <button id="btn-open" onClick={onOpen} title="Ouvrir une base de donnees Access (Ctrl+O)">
         Ouvrir base de donnees
       </button>
+
+      {!disabled && (
+        <>
+          <span className="toolbar-sep" />
+          <button onClick={onExportSQLite} title="Exporter toute la base Access vers un fichier SQLite (.db)">
+            Exporter SQLite
+          </button>
+        </>
+      )}
 
       <span className="toolbar-sep" />
 

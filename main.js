@@ -197,6 +197,31 @@ ipcMain.handle("print:preview", async (_event, htmlContent) => {
   }
 });
 
+ipcMain.handle("db:exportSQLite", async (_event, accessFilePath) => {
+  try {
+    const { exportToSQLite } = require("./src/db/exporter");
+
+    const baseName = path.basename(accessFilePath, path.extname(accessFilePath));
+    const suggestedName = `${baseName}.db`;
+
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: "Exporter vers SQLite",
+      defaultPath: path.join(app.getPath("documents"), suggestedName),
+      filters: [{ name: "Base SQLite", extensions: ["db", "sqlite"] }],
+      properties: ["showOverwriteConfirmation"],
+    });
+
+    if (canceled || !filePath) {
+      return { success: false, canceled: true };
+    }
+
+    const result = await exportToSQLite(accessFilePath, filePath);
+    return { success: true, filePath, ...result };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle("export:excel", async (_event, payload) => {
   try {
     const { rows = [], columns = [], tableName = "export" } = payload || {};
