@@ -1,6 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require("electron");
 const path = require("path");
-const fs = require("fs");
 const XLSX = require("xlsx");
 
 let mainWindow;
@@ -154,11 +153,11 @@ ipcMain.handle("print:labels", async (_event, options) => {
 
     mainWindow.webContents.print(
       {
-        silent: false,
         printBackground: false,
         margins: { marginType: "none" },
         pageSize: "A4",
         ...options,
+        silent: false,
       },
       (success, failureReason) => {
         if (success) resolve({ success: true });
@@ -168,30 +167,28 @@ ipcMain.handle("print:labels", async (_event, options) => {
   });
 });
 
-// Aperçu avant impression (ouvre une fenêtre dédiée)
-ipcMain.handle("print:preview", async (_event, htmlContent) => {
+// MIGRATION ONE-SHOT — TODO: supprimer ce handler après bascule MariaDB
+ipcMain.handle("db:exportSQL", async (_event, accessFilePath, tableName) => {
   try {
-    const previewWin = new BrowserWindow({
-      width: 900,
-      height: 700,
-      title: "Aperçu impression",
-      parent: mainWindow,
-      modal: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
+    const { exportToMariaDBSQL } = require("./src/db/sql-exporter");
+
+    const baseName = path.basename(accessFilePath, path.extname(accessFilePath));
+    const safeTable = String(tableName || "contacts").replace(/[<>:"/\\|?*]+/g, "_");
+    const suggestedName = `${baseName}-${safeTable}.sql`;
+
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: "Préparer SQL pour MariaDB",
+      defaultPath: path.join(app.getPath("documents"), suggestedName),
+      filters: [{ name: "Script SQL", extensions: ["sql"] }],
+      properties: ["showOverwriteConfirmation"],
     });
 
-    const tmpPath = path.join(app.getPath("temp"), "etiquettes-preview.html");
-    fs.writeFileSync(tmpPath, htmlContent, "utf8");
-    await previewWin.loadFile(tmpPath);
-
-    if (isDev) {
-      previewWin.webContents.openDevTools({ mode: "detach" });
+    if (canceled || !filePath) {
+      return { success: false, canceled: true };
     }
 
-    return { success: true };
+    const result = await exportToMariaDBSQL(accessFilePath, filePath, tableName);
+    return { success: true, filePath, ...result };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -258,5 +255,161 @@ ipcMain.handle("export:excel", async (_event, payload) => {
     return { success: true, filePath };
   } catch (err) {
     return { success: false, error: err.message };
+  }
+});
+
+// ─── MariaDB ───────────────────────────────────────────────────────────────────
+
+ipcMain.handle("mariadb:test", async (_event, config) => {
+  const { testConnection } = require("./src/db/mariadb");
+  return testConnection(config);
+});
+
+ipcMain.handle("mariadb:connect", async (_event, payload) => {
+  try {
+    const { config, remember } = payload || {};
+    const mariadb = require("./src/db/mariadb");
+    const info = await mariadb.connect(config);
+    let warning = null;
+
+    if (remember) {
+      const credentials = require("./src/storage/credentials");
+      try {
+        await credentials.save(config);
+      } catch (err) {
+        warning = `Connexion reussie, mais les identifiants n'ont pas ete sauvegardes : ${err.message}`;
+      }
+    }
+
+    return { success: true, ...info, warning };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("mariadb:disconnect", async () => {
+  const mariadb = require("./src/db/mariadb");
+  await mariadb.disconnect();
+  return { success: true };
+});
+
+ipcMain.handle("mariadb:loadSavedCredentials", async () => {
+  try {
+    const credentials = require("./src/storage/credentials");
+    const config = await credentials.load();
+    return { success: true, config };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("mariadb:clearSavedCredentials", async () => {
+  try {
+    const credentials = require("./src/storage/credentials");
+    await credentials.clear();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("mariadb:getContacts", async () => {
+  try {
+    const { getContacts } = require("./src/db/mariadb");
+    const data = await getContacts();
+    return { success: true, ...data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("mariadb:getListes", async () => {
+  try {
+    const { getListes } = require("./src/db/mariadb");
+    const listes = await getListes();
+    return { success: true, listes };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// API HTTPS Infomaniak
+
+ipcMain.handle("remoteApi:test", async (_event, config) => {
+  const remoteApi = require("./src/api/remote");
+  return remoteApi.testConnection(config);
+});
+
+ipcMain.handle("remoteApi:connect", async (_event, payload) => {
+  try {
+    const { config, remember } = payload || {};
+    const remoteApi = require("./src/api/remote");
+    const info = await remoteApi.connect(config);
+    let warning = null;
+
+    if (remember) {
+      const credentials = require("./src/storage/api-credentials");
+      try {
+        await credentials.save(config);
+      } catch (err) {
+        warning = `Connexion reussie, mais le code n'a pas ete sauvegarde : ${err.message}`;
+      }
+    }
+
+    return { success: true, ...info, warning };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("remoteApi:disconnect", async () => {
+  const remoteApi = require("./src/api/remote");
+  remoteApi.disconnect();
+  return { success: true };
+});
+
+ipcMain.handle("remoteApi:loadSavedCredentials", async () => {
+  try {
+    const credentials = require("./src/storage/api-credentials");
+    const config = await credentials.load();
+    return { success: true, config };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("remoteApi:clearSavedCredentials", async () => {
+  try {
+    const credentials = require("./src/storage/api-credentials");
+    await credentials.clear();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("remoteApi:getContacts", async () => {
+  try {
+    const remoteApi = require("./src/api/remote");
+    const data = await remoteApi.getContacts();
+    return { success: true, ...data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+app.on("before-quit", async () => {
+  try {
+    const mariadb = require("./src/db/mariadb");
+    await mariadb.disconnect();
+  } catch {
+    // ignore
+  }
+
+  try {
+    const remoteApi = require("./src/api/remote");
+    remoteApi.disconnect();
+  } catch {
+    // ignore
   }
 });

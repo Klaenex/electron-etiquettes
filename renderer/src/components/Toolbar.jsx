@@ -9,18 +9,50 @@ export default function Toolbar({
   status,
   isError,
   onExportSQLite,
+  onExportSQL,
+  sourceMode,
+  serverInfo,
+  canExportAccess,
+  onOpenServer,
+  onDisconnectServer,
+  onRefreshServer,
 }) {
+  const isServerMode = sourceMode === "server";
+  const serverLabel = serverInfo ? `${serverInfo.database}` : "non connecte";
+
   return (
     <header className="toolbar">
       <button id="btn-open" onClick={onOpen} title="Ouvrir une base de donnees Access (Ctrl+O)">
-        Ouvrir base de donnees
+        Ouvrir Access
       </button>
 
-      {!disabled && (
+      <button onClick={onOpenServer} title="Configurer la connexion">
+        {serverInfo ? "Changer connexion" : "Connexion"}
+      </button>
+
+      {serverInfo && (
+        <>
+          <button onClick={onRefreshServer} title="Recharger les contacts">
+            Actualiser
+          </button>
+          <button onClick={onDisconnectServer} title="Fermer la connexion">
+            Deconnecter
+          </button>
+        </>
+      )}
+
+      {canExportAccess && (
         <>
           <span className="toolbar-sep" />
           <button onClick={onExportSQLite} title="Exporter toute la base Access vers un fichier SQLite (.db)">
             Exporter SQLite
+          </button>
+          {/* MIGRATION ONE-SHOT - TODO: supprimer apres bascule MariaDB */}
+          <button
+            onClick={onExportSQL}
+            title="Generer un script .sql pour importer dans MariaDB (migration one-shot)"
+          >
+            Preparer SQL MariaDB
           </button>
         </>
       )}
@@ -32,11 +64,13 @@ export default function Toolbar({
       </label>
       <select
         id="select-table"
-        disabled={disabled}
+        disabled={disabled || isServerMode}
         value={currentTable || ""}
         onChange={(event) => onChangeTable(event.target.value)}
       >
-        {tables.length === 0 ? (
+        {isServerMode ? (
+          <option value={currentTable || "contacts"}>Contacts</option>
+        ) : tables.length === 0 ? (
           <option value="">Aucune base chargee</option>
         ) : (
           tables.map((table) => (
@@ -57,6 +91,8 @@ export default function Toolbar({
         value={globalSearch}
         onChange={(event) => onChangeSearch(event.target.value)}
       />
+
+      {isServerMode && <span className="connection-pill">API : {serverLabel}</span>}
 
       <span className="toolbar-flex" />
 

@@ -5,43 +5,40 @@
  */
 
 const Database = require('better-sqlite3');
-const { loadDatabase, getTableData } = require('./reader');
+const { getReader } = require('./reader');
 
-/**
- * Échappe un identifiant SQL (nom de table ou colonne).
- * @param {string} name
- * @returns {string}
- */
 function quoteIdent(name) {
   return `"${String(name).replace(/"/g, '""')}"`;
 }
 
-/**
- * Exporte toutes les tables d'une base Access vers un fichier SQLite.
- * @param {string} accessFilePath  Chemin vers le fichier .mdb/.accdb
- * @param {string} sqliteFilePath  Chemin de destination pour le .db
- * @returns {{ tableCount: number, rowCount: number }}
- */
+function normalizeValue(val) {
+  if (val === null || val === undefined) return null;
+  if (val instanceof Date) return val.toLocaleDateString('fr-FR');
+  return typeof val === 'string' ? val : String(val);
+}
+
 async function exportToSQLite(accessFilePath, sqliteFilePath) {
-  const { tables } = await loadDatabase(accessFilePath);
+  const reader = await getReader(accessFilePath);
+  const tables = reader.getTableNames({ normalTables: true, systemTables: false });
 
   const db = new Database(sqliteFilePath);
-
   db.pragma('journal_mode = WAL');
 
   let totalRows = 0;
 
-  for (const tableName of tables) {
-    const { columns, rows } = await getTableData(accessFilePath, tableName);
+  try {
+    for (const tableName of tables) {
+      const table = reader.getTable(tableName);
+      const columns = table.getColumnNames();
 
-    if (columns.length === 0) {
-      continue;
-    }
+      if (columns.length === 0) continue;
 
-    const colDefs = columns.map((col) => `${quoteIdent(col)} TEXT`).join(', ');
-    db.exec(`CREATE TABLE IF NOT EXISTS ${quoteIdent(tableName)} (${colDefs})`);
+      const colDefs = columns.map((col) => `${quoteIdent(col)} TEXT`).join(', ');
+      db.exec(`CREATE TABLE IF NOT EXISTS ${quoteIdent(tableName)} (${colDefs})`);
 
-    if (rows.length > 0) {
+      const rows = table.getData();
+      if (rows.length === 0) continue;
+
       const colNames = columns.map(quoteIdent).join(', ');
       const placeholders = columns.map(() => '?').join(', ');
       const stmt = db.prepare(
@@ -50,16 +47,16 @@ async function exportToSQLite(accessFilePath, sqliteFilePath) {
 
       const insertAll = db.transaction((allRows) => {
         for (const row of allRows) {
-          stmt.run(columns.map((col) => row[col] ?? null));
+          stmt.run(columns.map((col) => normalizeValue(row[col])));
         }
       });
 
       insertAll(rows);
       totalRows += rows.length;
     }
+  } finally {
+    db.close();
   }
-
-  db.close();
 
   return { tableCount: tables.length, rowCount: totalRows };
 }

@@ -1,15 +1,22 @@
-export default function EmptyState({ onOpen }) {
+export default function EmptyState({ sourceMode, onOpen, onOpenServer }) {
+  const isServerMode = sourceMode === "server";
+
   return (
     <div id="empty-state" className="empty-state">
       <div className="empty-icon">Table</div>
       <p>
-        Ouvrez une base de donnees Access (.mdb / .accdb)
+        {isServerMode ? "Aucun contact trouve." : "Ouvrez une source de donnees."}
         <br />
-        pour afficher les enregistrements.
+        Access (.mdb / .accdb) ou connexion securisee.
       </p>
-      <button id="btn-open-empty" onClick={onOpen}>
-        Ouvrir une base de donnees...
-      </button>
+      <div className="empty-actions">
+        <button id="btn-open-empty" onClick={onOpen}>
+          Ouvrir Access...
+        </button>
+        <button onClick={onOpenServer}>
+          Connexion...
+        </button>
+      </div>
     </div>
   );
 }

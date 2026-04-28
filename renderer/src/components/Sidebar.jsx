@@ -1,3 +1,23 @@
+function SourceSection({ sourceMode, serverInfo, onRefreshServer }) {
+  if (sourceMode !== "server") {
+    return null;
+  }
+
+  return (
+    <section className="sidebar-section">
+      <h3>Source</h3>
+      <div className="source-summary">
+        <strong>Connexion API</strong>
+        <span>{serverInfo ? serverInfo.database : "Non connecte"}</span>
+        <span>{serverInfo ? serverInfo.host : ""}</span>
+      </div>
+      <button disabled={!serverInfo} onClick={onRefreshServer}>
+        Actualiser les contacts
+      </button>
+    </section>
+  );
+}
+
 function SelectionSection({ disabled, onSelectAll, onSelectFiltered, onDeselectAll }) {
   return (
     <section className="sidebar-section">
@@ -27,7 +47,7 @@ function FiltersSection({
       <h3>Filtres par colonne</h3>
       <div id="column-filters">
         {columns.length === 0 ? (
-          <p className="placeholder-text">Chargez une base de donnees pour voir les filtres.</p>
+          <p className="placeholder-text">Chargez une source de donnees pour voir les filtres.</p>
         ) : (
           <>
             <button className="btn-reset-filters" onClick={onResetFilters}>
@@ -88,7 +108,7 @@ function LabelFieldsSection({ labelLayout }) {
       <p className="hint">Mise en page fixe utilisee pour chaque etiquette.</p>
       <div id="label-fields-config">
         {labelLayout.length === 0 ? (
-          <p className="placeholder-text">Chargez une base de donnees pour configurer.</p>
+          <p className="placeholder-text">Chargez une source de donnees pour configurer.</p>
         ) : (
           labelLayout.map((item) => (
             <div className="label-field-item label-field-static" key={item.key}>
@@ -111,6 +131,9 @@ function LabelFieldsSection({ labelLayout }) {
 export default function Sidebar(props) {
   const {
     disabled,
+    sourceMode,
+    serverInfo,
+    onRefreshServer,
     filterColumns,
     columnFilters,
     onChangeFilter,
@@ -129,6 +152,12 @@ export default function Sidebar(props) {
 
   return (
     <aside className="sidebar">
+      <SourceSection
+        sourceMode={sourceMode}
+        serverInfo={serverInfo}
+        onRefreshServer={onRefreshServer}
+      />
+
       <SelectionSection
         disabled={disabled}
         onSelectAll={onSelectAll}

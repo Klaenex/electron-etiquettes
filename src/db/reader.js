@@ -3,44 +3,46 @@
  * Utilise le package `mdb-reader` (pure JS, sans ODBC).
  */
 
-const fs = require('fs');
+const fs = require('fs/promises');
 
-// mdb-reader v3+ est un module ESM — on utilise import() dynamique
+let MDBReaderCtor = null;
 async function getMDBReader() {
+  if (MDBReaderCtor) return MDBReaderCtor;
   const mod = await import('mdb-reader');
-  return mod.default ?? mod.MDBReader ?? mod;
+  MDBReaderCtor = mod.default ?? mod.MDBReader ?? mod;
+  return MDBReaderCtor;
 }
 
-/**
- * Charge une base de données Access et retourne la liste de ses tables.
- * @param {string} filePath Chemin absolu vers le fichier .mdb/.accdb
- * @returns {{ tables: string[] }}
- */
+// Cache : un MDBReader par fichier, invalidé si mtime change.
+const readerCache = new Map();
+
+async function getReader(filePath) {
+  const stat = await fs.stat(filePath);
+  const cached = readerCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs) {
+    return cached.reader;
+  }
+
+  const Ctor = await getMDBReader();
+  const buffer = await fs.readFile(filePath);
+  const reader = new Ctor(buffer);
+  readerCache.set(filePath, { reader, mtimeMs: stat.mtimeMs });
+  return reader;
+}
+
 async function loadDatabase(filePath) {
-  const MDBReader = await getMDBReader();
-  const buffer = fs.readFileSync(filePath);
-  const reader = new MDBReader(buffer);
+  const reader = await getReader(filePath);
   const tables = reader.getTableNames({ normalTables: true, systemTables: false });
   return { tables };
 }
 
-/**
- * Lit toutes les données d'une table.
- * @param {string} filePath Chemin absolu vers le fichier .mdb/.accdb
- * @param {string} tableName Nom de la table à lire
- * @returns {{ columns: string[], rows: object[] }}
- */
 async function getTableData(filePath, tableName) {
-  const MDBReader = await getMDBReader();
-  const buffer = fs.readFileSync(filePath);
-  const reader = new MDBReader(buffer);
+  const reader = await getReader(filePath);
   const table = reader.getTable(tableName);
 
   const columns = table.getColumnNames();
   const rows = table.getData();
 
-  // Nettoyer les valeurs : convertir null/undefined en chaîne vide,
-  // convertir les dates en chaîne lisible
   const cleanRows = rows.map((row, idx) => {
     const cleaned = { _id: idx };
     for (const col of columns) {
@@ -59,4 +61,4 @@ async function getTableData(filePath, tableName) {
   return { columns, rows: cleanRows };
 }
 
-module.exports = { loadDatabase, getTableData };
+module.exports = { loadDatabase, getTableData, getReader };
